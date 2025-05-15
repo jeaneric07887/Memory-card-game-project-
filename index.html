@@ -174,7 +174,7 @@
         <p>{{ message }}</p>
         <button v-if="message.includes('Continue')" @click="nextLevel">Next Level</button>
         <button v-if="message.includes('Fail')" @click="retryLevel">Retry</button>
-        <button v-if="message.includes('Excellent')" @click="startGame">Start Again</button>
+        <button v-if="message.includes('Excellent')" @click="startGame">Start the first level</button>
       </div>
 
       <audio id="niceSound" src="Eric nice voice.m4a"></audio>
