@@ -2,58 +2,175 @@
 <html lang="en">
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Memory Game - Vue CDN</title>
+  <title>Memory Game with Levels</title>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <style>
     body {
-      font-family: sans-serif;
+      font-family: Arial, sans-serif;
       text-align: center;
       padding: 20px;
+      background: linear-gradient(to right, #e0f7fa, #f3e5f5);
     }
+
+    .intro {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 80vh;
+      animation: fadeIn 2s ease;
+    }
+
+    .start-button {
+      padding: 15px 30px;
+      font-size: 20px;
+      background: linear-gradient(45deg, #7e57c2, #26c6da);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform 0.3s, box-shadow 0.3s;
+      animation: pulse 2s infinite;
+    }
+
+    .start-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    }
+
     .grid {
       display: grid;
       grid-template-columns: repeat(4, 80px);
       gap: 10px;
       justify-content: center;
+      margin: 20px 0;
     }
+
     .card {
       width: 80px;
       height: 80px;
-      background-color: #ccc;
+      background: #ccc;
+      border-radius: 10px;
+      overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 10px;
-      overflow: hidden;
       cursor: pointer;
+      transition: transform 0.6s ease;
+      transform-style: preserve-3d;
+      animation: cardPop 0.4s ease;
     }
+
+    .card:hover {
+      transform: scale(1.05) rotateY(10deg);
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+
     .card img {
       width: 100%;
       height: 100%;
       object-fit: cover;
     }
+
+    .card span {
+      font-size: 32px;
+      color: red;
+      font-weight: bold;
+    }
+
     .hidden {
-      background-color: #999;
+      background-color: #eee;
+    }
+
+    .message {
+      font-size: 24px;
+      margin: 10px;
+      color: #4a148c;
+    }
+
+    .message button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #4a148c;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .final-level {
+      color: #d50000;
+      font-weight: bold;
+      font-size: 28px;
+      text-shadow: 1px 1px 2px #888;
+      animation: finalFlash 1.5s infinite;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes finalFlash {
+      0% { opacity: 1; }
+      50% { opacity: 0.6; }
+      100% { opacity: 1; }
+    }
+
+    @keyframes cardPop {
+      0% { transform: scale(0.8); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
     }
   </style>
 </head>
 <body>
   <div id="app">
-    <h2>Memory Card Game</h2>
-    <div class="grid">
-      <div 
-        v-for="(card, index) in cards" 
-        :key="index"
-        class="card"
-        :class="{ matched: card.matched, hidden: !card.visible && !card.matched }"
-        @click="flipCard(index)"
-      >
-        <img v-if="card.visible || card.matched" :src="card.value" />
-      </div>
+    <div v-if="!started" class="intro">
+      <h2>Welcome to Memory Game</h2>
+      <button class="start-button" @click="startGame">Start Play</button>
     </div>
-    <p>Attempts: {{ attempts }}</p>
-    <h3 v-if="gameWon">Congratulations!</h3>
-    <audio id="clapSound" src="https://www.soundjay.com/human/applause-01.mp3"></audio>
+
+    <div v-else>
+      <h2 v-if="level < 5">Level {{ level }}</h2>
+      <h2 v-else class="final-level">Final Level</h2>
+
+      <p>MINUTES LEFT: {{ minutes }}:{{ seconds.toString().padStart(2, '0') }}</p>
+
+      <div class="grid">
+        <div 
+          v-for="(card, index) in cards"
+          :key="index"
+          class="card"
+          :class="{ hidden: !card.visible && !card.matched }"
+          @click="flipCard(index)">
+          <img 
+            v-if="(card.visible || card.matched) && isValidImage(card.value)" 
+            :src="card.value" 
+            @error="handleImageError(index)"
+          />
+          <span v-else>?</span>
+        </div>
+      </div>
+
+      <p>SCORES: {{ attempts }}</p>
+
+      <div class="message" v-if="message">
+        <p>{{ message }}</p>
+        <button v-if="message.includes('Continue')" @click="nextLevel">Next Level</button>
+        <button v-if="message.includes('Fail')" @click="retryLevel">Retry</button>
+      </div>
+
+      <!-- Sounds -->
+      <audio id="niceSound" src="Eric nice voice.m4a"></audio>
+      <audio id="congratsSound" src="Eric excellent voice.m4a"></audio>
+    </div>
   </div>
 
   <script>
@@ -62,35 +179,79 @@
     createApp({
       data() {
         return {
-values: [
-  "IMG-20250507-WA0002.jpg",
-  "Screenshot_20250502-163426_WhatsApp.jpg",
-  "6664.jpg",
-  "Screenshot_20250502-163426_WhatsApp.jpg",
-  "6664.jpg",
-  "6663.jpg",
-  "6663.jpg",
-"IMG-20250507-WA0002.jpg"
-],
+          allImages: [
+            "SaveClip.App_491517588_1354684592459059_6837848969385198217_n.jpg",
+            "Comfort.jpg",
+            "Intermilan.jpg",
+            "Arsenal.jpg",
+            "SaveClip.App_491517588_1354684592459059_6837848969385198217_n.jpg",
+            "Comfort.jpg",
+            "Arsenal.jpg",
+            "Intermilan.jpg"
+          ],
           cards: [],
           flippedIndexes: [],
           attempts: 0,
-          gameWon: false
+          started: false,
+          gameWon: false,
+          message: '',
+          level: 1,
+          timer: null,
+          timeLeft: 180
         };
       },
-      created() {
-        this.shuffleCards();
+      computed: {
+        minutes() {
+          return Math.floor(this.timeLeft / 60);
+        },
+        seconds() {
+          return this.timeLeft % 60;
+        }
       },
       methods: {
-        shuffleCards() {
-          const shuffled = [...this.values]
-            .sort(() => 0.5 - Math.random())
-            .map(value => ({ value, visible: false, matched: false }));
-          this.cards = shuffled;
+        startGame() {
+          this.started = true;
+          this.level = 1;
+          this.loadLevel();
+        },
+        loadLevel() {
+          this.resetGame();
+          const pairCount = (this.level + 1) * 2;
+          const selected = this.allImages.slice(0, pairCount / 2);
+          const duplicated = [...selected, ...selected];
+          const shuffled = duplicated.sort(() => Math.random() - 0.5);
+
+          this.cards = shuffled.map(val => ({
+            value: val,
+            visible: false,
+            matched: false
+          }));
+          this.startTimer();
+        },
+        resetGame() {
+          clearInterval(this.timer);
+          this.timeLeft = 180;
+          this.attempts = 0;
+          this.message = '';
+          this.cards = [];
+          this.flippedIndexes = [];
+          this.gameWon = false;
+        },
+        startTimer() {
+          this.timer = setInterval(() => {
+            if (this.timeLeft > 0) {
+              this.timeLeft--;
+            } else {
+              clearInterval(this.timer);
+              if (!this.gameWon) {
+                this.message = "Fail! Try again.";
+              }
+            }
+          }, 1000);
         },
         flipCard(index) {
           const card = this.cards[index];
-          if (card.visible || card.matched || this.flippedIndexes.length >= 2) return;
+          if (!card || card.visible || card.matched || this.flippedIndexes.length === 2) return;
 
           card.visible = true;
           this.flippedIndexes.push(index);
@@ -98,14 +259,14 @@ values: [
           if (this.flippedIndexes.length === 2) {
             this.attempts++;
             setTimeout(() => {
-              const [i1, i2] = this.flippedIndexes;
-              if (this.cards[i1].value === this.cards[i2].value) {
-                this.cards[i1].matched = true;
-                this.cards[i2].matched = true;
+              const [i, j] = this.flippedIndexes;
+              if (this.cards[i].value === this.cards[j].value) {
+                this.cards[i].matched = true;
+                this.cards[j].matched = true;
                 this.checkWin();
               } else {
-                this.cards[i1].visible = false;
-                this.cards[i2].visible = false;
+                this.cards[i].visible = false;
+                this.cards[j].visible = false;
               }
               this.flippedIndexes = [];
             }, 800);
@@ -113,12 +274,34 @@ values: [
         },
         checkWin() {
           if (this.cards.every(card => card.matched)) {
+            clearInterval(this.timer);
             this.gameWon = true;
-            document.getElementById('clapSound').play();
+            if (this.level < 5) {
+              this.message = "Continue to next level!";
+              const audio = document.getElementById("niceSound");
+              if (audio) audio.play();
+            } else {
+              this.message = "Excellent!";
+              const audio = document.getElementById("congratsSound");
+              if (audio) audio.play();
+            }
           }
+        },
+        nextLevel() {
+          this.level++;
+          this.loadLevel();
+        },
+        retryLevel() {
+          this.loadLevel();
+        },
+        isValidImage(src) {
+          return typeof src === 'string' && src.length > 0;
+        },
+        handleImageError(index) {
+          this.cards[index].visible = false;
         }
       }
-    }).mount("#app");
+    }).mount('#app');
   </script>
 </body>
 </html>
