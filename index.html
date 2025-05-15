@@ -5,83 +5,87 @@
   <title>Memory Game</title>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
+    html, body {
       margin: 0;
       padding: 0;
+      font-family: 'Segoe UI', sans-serif;
       background: linear-gradient(to right, #e0f7fa, #f3e5f5);
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      height: 100%;
     }
 
     #app {
-      width: 100%;
-      max-width: 1200px;
-      padding: 20px;
+      height: 100vh;
       box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 10px;
+    }
+
+    .intro, .game-area {
+      width: 100%;
+      max-width: 600px;
+      animation: fadeIn 0.6s ease;
     }
 
     .centered-text {
       text-align: center;
     }
 
-    .intro, .game-area {
-      animation: fadeIn 1s ease;
-    }
-
     .profile-picture {
-      width: 100px;
-      height: 100px;
+      width: 80px;
+      height: 80px;
       border-radius: 50%;
       border: 3px solid white;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+      margin-bottom: 10px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
     }
 
     .start-button {
-      padding: 15px 30px;
-      font-size: 20px;
+      padding: 12px 24px;
+      font-size: 18px;
       background: linear-gradient(45deg, #7e57c2, #26c6da);
       color: white;
       border: none;
-      border-radius: 12px;
+      border-radius: 10px;
       cursor: pointer;
-      margin: 20px 0;
+      margin: 15px 0;
     }
 
     .instructions {
       background: #fff;
-      padding: 20px;
-      border-radius: 10px;
-      max-width: 600px;
-      margin: 0 auto;
-      font-size: 16px;
+      padding: 10px 15px;
+      border-radius: 8px;
+      font-size: 14px;
       color: #333;
+      text-align: left;
     }
 
     .game-header {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
+      text-align: center;
       margin-bottom: 10px;
     }
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-      gap: 12px;
-      margin: 20px 0;
+      grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+      gap: 10px;
+      margin: 10px 0;
+      max-height: 60vh;
+      overflow-y: auto;
     }
 
     .card {
       background: #ccc;
-      border-radius: 10px;
+      border-radius: 8px;
       overflow: hidden;
       cursor: pointer;
-      transition: transform 0.3s;
       aspect-ratio: 1/1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.3s;
     }
 
     .card:hover {
@@ -95,11 +99,7 @@
     }
 
     .card span {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      font-size: 32px;
+      font-size: 24px;
       color: red;
       font-weight: bold;
     }
@@ -110,16 +110,14 @@
 
     .message {
       text-align: center;
-      font-size: 20px;
-      color: #4a148c;
-      margin-top: 20px;
-      margin-bottom: 40px;
+      font-size: 18px;
+      margin-top: 10px;
     }
 
     .message button {
-      margin: 10px 10px 0 10px;
-      padding: 10px 20px;
-      font-size: 16px;
+      margin: 10px 8px;
+      padding: 8px 16px;
+      font-size: 14px;
       background-color: #4a148c;
       color: white;
       border: none;
@@ -128,23 +126,8 @@
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-20px); }
+      from { opacity: 0; transform: translateY(-10px); }
       to { opacity: 1; transform: translateY(0); }
-    }
-
-    @media (max-width: 600px) {
-      .start-button {
-        font-size: 18px;
-        padding: 12px 24px;
-      }
-
-      .instructions {
-        font-size: 14px;
-      }
-
-      .message {
-        font-size: 18px;
-      }
     }
   </style>
 </head>
@@ -154,14 +137,13 @@
       <img class="profile-picture" src="1715365949838.jpg" alt="Profile Picture">
       <h2>Welcome to our Memory Card Game</h2>
       <button class="start-button" @click="startGame">Start Play</button>
-
       <div class="instructions">
         <h3>Instructions</h3>
-        <p>Match identical cards. Click on two cards; if they match, they stay open. Match all to win.</p>
+        <p>Match identical cards. Click two cards; if they match, they stay open. Match all to win.</p>
         <ul>
-          <li>Each level increases difficulty.</li>
-          <li>You have 3 minutes per level.</li>
-          <li>If time runs out, you retry.</li>
+          <li>Levels get harder.</li>
+          <li>3 minutes per level.</li>
+          <li>Retry if time runs out.</li>
         </ul>
       </div>
     </div>
@@ -169,8 +151,8 @@
     <div v-else class="game-area">
       <div class="game-header">
         <h2>{{ level < 5 ? 'Level ' + level : 'Final Level' }}</h2>
-        <h3>Time Left: {{ minutes }}:{{ seconds.toString().padStart(2, '0') }}</h3>
-        <h3>Scores: {{ attempts }}</h3>
+        <p>Time Left: {{ minutes }}:{{ seconds.toString().padStart(2, '0') }}</p>
+        <p>Attempts: {{ attempts }}</p>
       </div>
 
       <div class="grid">
@@ -183,8 +165,7 @@
           <img 
             v-if="(card.visible || card.matched) && isValidImage(card.value)" 
             :src="card.value" 
-            @error="handleImageError(index)"
-          />
+            @error="handleImageError(index)" />
           <span v-else>?</span>
         </div>
       </div>
@@ -196,7 +177,6 @@
         <button v-if="message.includes('Excellent')" @click="startGame">Start Again</button>
       </div>
 
-      <!-- Sounds -->
       <audio id="niceSound" src="Eric nice voice.m4a"></audio>
       <audio id="congratsSound" src="Eric excellent voice.m4a"></audio>
     </div>
@@ -227,7 +207,8 @@
           message: '',
           level: 1,
           timer: null,
-          timeLeft: 180
+          timeLeft: 180,
+          isProcessing: false
         };
       },
       computed: {
@@ -265,6 +246,7 @@
           this.cards = [];
           this.flippedIndexes = [];
           this.gameWon = false;
+          this.isProcessing = false;
         },
         startTimer() {
           this.timer = setInterval(() => {
@@ -280,12 +262,13 @@
         },
         flipCard(index) {
           const card = this.cards[index];
-          if (!card || card.visible || card.matched || this.flippedIndexes.length === 2) return;
+          if (!card || card.visible || card.matched || this.flippedIndexes.length === 2 || this.isProcessing) return;
 
           card.visible = true;
           this.flippedIndexes.push(index);
 
           if (this.flippedIndexes.length === 2) {
+            this.isProcessing = true;
             this.attempts++;
             setTimeout(() => {
               const [i, j] = this.flippedIndexes;
@@ -298,6 +281,7 @@
                 this.cards[j].visible = false;
               }
               this.flippedIndexes = [];
+              this.isProcessing = false;
             }, 800);
           }
         },
@@ -308,19 +292,21 @@
             if (this.level < 5) {
               this.message = "Continue to next level!";
               const audio = document.getElementById("niceSound");
-              if (audio) audio.play();
+              if (audio) audio.play().catch(() => {});
             } else {
               this.message = "Excellent!";
               const audio = document.getElementById("congratsSound");
-              if (audio) audio.play();
+              if (audio) audio.play().catch(() => {});
             }
           }
         },
         nextLevel() {
+          clearInterval(this.timer);
           this.level++;
           this.loadLevel();
         },
         retryLevel() {
+          clearInterval(this.timer);
           this.loadLevel();
         },
         isValidImage(src) {
@@ -333,4 +319,4 @@
     }).mount('#app');
   </script>
 </body>
-</html>
+  </html>
