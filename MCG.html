@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Memory Game - Vue CDN</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 80px);
+      gap: 10px;
+      justify-content: center;
+    }
+    .card {
+      width: 80px;
+      height: 80px;
+      background-color: #ccc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .hidden {
+      background-color: #999;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h2>Memory Card Game</h2>
+    <div class="grid">
+      <div 
+        v-for="(card, index) in cards" 
+        :key="index"
+        class="card"
+        :class="{ matched: card.matched, hidden: !card.visible && !card.matched }"
+        @click="flipCard(index)"
+      >
+        <img v-if="card.visible || card.matched" :src="card.value" />
+      </div>
+    </div>
+    <p>Attempts: {{ attempts }}</p>
+    <h3 v-if="gameWon">Congratulations!</h3>
+    <audio id="clapSound" src="https://www.soundjay.com/human/applause-01.mp3"></audio>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+
+    createApp({
+      data() {
+        return {
+values: [
+  "IMG-20250507-WA0002.jpg",
+  "Screenshot_20250502-163426_WhatsApp.jpg",
+  "6664.jpg",
+  "Screenshot_20250502-163426_WhatsApp.jpg",
+  "6664.jpg",
+  "6663.jpg",
+  "6663.jpg",
+"IMG-20250507-WA0002.jpg"
+],
+          cards: [],
+          flippedIndexes: [],
+          attempts: 0,
+          gameWon: false
+        };
+      },
+      created() {
+        this.shuffleCards();
+      },
+      methods: {
+        shuffleCards() {
+          const shuffled = [...this.values]
+            .sort(() => 0.5 - Math.random())
+            .map(value => ({ value, visible: false, matched: false }));
+          this.cards = shuffled;
+        },
+        flipCard(index) {
+          const card = this.cards[index];
+          if (card.visible || card.matched || this.flippedIndexes.length >= 2) return;
+
+          card.visible = true;
+          this.flippedIndexes.push(index);
+
+          if (this.flippedIndexes.length === 2) {
+            this.attempts++;
+            setTimeout(() => {
+              const [i1, i2] = this.flippedIndexes;
+              if (this.cards[i1].value === this.cards[i2].value) {
+                this.cards[i1].matched = true;
+                this.cards[i2].matched = true;
+                this.checkWin();
+              } else {
+                this.cards[i1].visible = false;
+                this.cards[i2].visible = false;
+              }
+              this.flippedIndexes = [];
+            }, 800);
+          }
+        },
+        checkWin() {
+          if (this.cards.every(card => card.matched)) {
+            this.gameWon = true;
+            document.getElementById('clapSound').play();
+          }
+        }
+      }
+    }).mount("#app");
+  </script>
+</body>
+</html>
